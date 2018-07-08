@@ -2,14 +2,24 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/nlopes/slack"
 )
 
 func main() {
-	api := slack.New("TOKEN_HERE")
-	//api.SetDebug(true)
+	println("BuddyBot")
 
+	token := os.Getenv("BUDDYBOT_TOKEN")
+	if token == "" {
+		fmt.Println("Token must be provided by setting the BUDDYBOT_TOKEN EnvVar")
+		os.Exit(1)
+	}
+
+	api := slack.New(token)
+	api.SetDebug(false)
+
+	// list all users in the Slack workspace
 	users, err := api.GetUsers()
 	if err != nil {
 		fmt.Printf("%s\n", err)

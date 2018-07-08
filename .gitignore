@@ -13,3 +13,6 @@
 
 # Vendor directory
 vendor/
+
+# Local set-up scripts
+env.sh
