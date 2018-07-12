@@ -31,7 +31,6 @@ func main() {
 		case *slack.ConnectedEvent:
 			fmt.Println("Infos:", ev.Info)
 			fmt.Println("Connection counter:", ev.ConnectionCount)
-			rtm.SendMessage(rtm.NewOutgoingMessage("BuddyBot reporting for duty", "CBLPRTX3P"))
 
 		case *slack.MessageEvent:
 			fmt.Printf("message text: %v\n", ev.Text)
