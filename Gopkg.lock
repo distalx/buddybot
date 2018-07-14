@@ -8,14 +8,17 @@
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/nlopes/slack"
-  packages = ["."]
-  revision = "8ab4d0b364ef1e9af5d102531da20d5ec902b6c4"
-  version = "v0.2.0"
+  packages = [
+    ".",
+    "slackevents"
+  ]
+  revision = "1a894400a36157b34f9887c4d8ded3c608b43ccd"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "78b84bf78cfa23cc04bc91f0745dbc7d5d7115e8f6430e9594c5b16d268e3294"
+  inputs-digest = "0f3896f367fb1eac5f0b8a2dfd6b5307cede68c92349385efbeaab6f8112a766"
   solver-name = "gps-cdcl"
   solver-version = 1

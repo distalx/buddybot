@@ -1,112 +1,30 @@
 package main
 
 import (
-	"reflect"
+	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
-var testCasesPP = []struct {
-	name  string
-	msg   string
-	users []string
-}{
-	{
-		name:  "no user mention or ++",
-		msg:   "This is some text",
-		users: []string{},
-	},
-	{
-		name:  "no user mention with ++",
-		msg:   "This is some text++",
-		users: []string{},
-	},
-	{
-		name:  "user mention without ++",
-		msg:   "This is some text <@UBLKAG9K4>",
-		users: []string{},
-	},
-	{
-		name:  "single ++ mention",
-		msg:   "This is some text <@UBLKAG9K4>++",
-		users: []string{"UBLKAG9K4"},
-	},
-	{
-		name:  "invalid user mention with ++",
-		msg:   "This is an invalid user @Dave++",
-		users: []string{},
-	},
-	{
-		name:  "multiple user mentions with ++",
-		msg:   "This is a double <@UBLKAG9K4>++ and <@UBLPTK0JH>++.",
-		users: []string{"UBLKAG9K4", "UBLPTK0JH"},
-	},
-}
+func TestServePIS(t *testing.T) {
+	var reqStr = `{
+		"token": "Jhj5dZrVaK7ZwHHjRyZWjbDl",
+		"challenge": "3eZbrw1aBm2rZgRNFdxV2595E9CY3gmdALWMmHkvFXO7tYXAYM8P",
+		"type": "url_verification"
+  }`
 
-func TestIdentifyPlusPlus(t *testing.T) {
-	for _, tc := range testCasesPP {
-		t.Run(tc.name, func(st *testing.T) {
-			users := identifyPlusPlus(tc.msg)
+	Routes()
 
-			if len(users) != len(tc.users) {
-				t.Error("should return the correct number of users")
-			}
-
-			if len(tc.users) > 0 && reflect.DeepEqual(users, tc.users) == false {
-				t.Error("should return the correct list of users")
-			}
-		})
+	r, err := http.NewRequest(http.MethodPost, "/events-endpoint", bytes.NewBufferString(reqStr))
+	if err != nil {
+		t.Fatal("should be able to create request without error, got:", err)
 	}
-}
 
-var testCasesMM = []struct {
-	name  string
-	msg   string
-	users []string
-}{
-	{
-		name:  "no user mention or --",
-		msg:   "This is some text",
-		users: []string{},
-	},
-	{
-		name:  "no user mention with --",
-		msg:   "This is some text--",
-		users: []string{},
-	},
-	{
-		name:  "user mention without --",
-		msg:   "This is some text <@UBLKAG9K4>",
-		users: []string{},
-	},
-	{
-		name:  "single -- mention",
-		msg:   "This is some text <@UBLKAG9K4>--",
-		users: []string{"UBLKAG9K4"},
-	},
-	{
-		name:  "invalid user mention with --",
-		msg:   "This is an invalid user @Dave--",
-		users: []string{},
-	},
-	{
-		name:  "multiple user mentions with --",
-		msg:   "This is a double <@UBLKAG9K4>-- and <@UBLPTK0JH>--.",
-		users: []string{"UBLKAG9K4", "UBLPTK0JH"},
-	},
-}
+	w := httptest.NewRecorder()
+	http.DefaultServeMux.ServeHTTP(w, r)
 
-func TestIdentifyMinusMinus(t *testing.T) {
-	for _, tc := range testCasesMM {
-		t.Run(tc.name, func(st *testing.T) {
-			users := identifyMinusMinus(tc.msg)
-
-			if len(users) != len(tc.users) {
-				t.Error("should return the correct number of users")
-			}
-
-			if len(tc.users) > 0 && reflect.DeepEqual(users, tc.users) == false {
-				t.Error("should return the correct list of users")
-			}
-		})
+	if w.Code != http.StatusOK {
+		t.Error("should return an HTTP 200 response, got:", w.Code)
 	}
 }
