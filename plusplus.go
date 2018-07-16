@@ -1,4 +1,4 @@
-package plusplus
+package main
 
 import "regexp"
 

@@ -31,3 +31,8 @@ func main() {
 	Routes()
 	http.ListenAndServe(":3000", nil)
 }
+
+// Routes sets up the routes for our web service.
+func Routes() {
+	http.HandleFunc("/events-endpoint", EventHandler)
+}

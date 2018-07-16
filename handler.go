@@ -12,11 +12,6 @@ import (
 	"github.com/nlopes/slack/slackevents"
 )
 
-// Routes sets up the routes for our web service.
-func Routes() {
-	http.HandleFunc("/events-endpoint", EventHandler)
-}
-
 // EventHandler handles inbound events posted by Slack
 func EventHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -59,7 +54,6 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	body := buf.String()
 
 	// validate the request signature is correct before handling the event
-
 	msg := "v0:" + ts + ":" + body
 
 	valid := CheckHMAC(msg, sig[3:], secret)
@@ -76,9 +70,10 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// process the slack event
+	log.Println("event.Type:", event.Type)
 	switch event.Type {
 	case slackevents.URLVerification:
-		log.Println("event type:", event.Type)
 		var r *slackevents.ChallengeResponse
 		err := json.Unmarshal([]byte(body), &r)
 		if err != nil {
@@ -90,16 +85,14 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 
 	case slackevents.CallbackEvent:
-		switch ev := event.InnerEvent.Data.(type) {
-		case *slackevents.MessageEvent:
-			log.Println("message text:", ev.Text)
-			log.Println("message subtype:", ev.SubType)
-		default:
-			log.Println("unhandled message type:", event.InnerEvent.Type)
+		err = handleEvent(event)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
+		w.WriteHeader(http.StatusAccepted)
 
 	default:
-		log.Println("event type:", event.Type)
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
@@ -114,8 +107,13 @@ func CheckHMAC(msg, msgMAC, key string) bool {
 	return hmac.Equal(expectedKey, actualKey)
 }
 
+// NullComparator is a dummy comparator that allows us to define an
+// empty Verify method
 type NullComparator struct{}
 
+// Verify always returns true, overriding the default token verification
+// method. This is acceptable as we implement a separate check to confirm
+// the validity of the request signature.
 func (c NullComparator) Verify(string) bool {
 	return true
 }
