@@ -85,15 +85,12 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 
 	case slackevents.CallbackEvent:
-		err = handleEvent(event)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+
+		// TODO: drop events on a channel and respond
 		w.WriteHeader(http.StatusAccepted)
 
 	default:
-		w.WriteHeader(http.StatusAccepted)
+		w.WriteHeader(http.StatusNotImplemented)
 	}
 }
 

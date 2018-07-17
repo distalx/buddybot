@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/nlopes/slack/slackevents"
 )
 
 func TestServePIS(t *testing.T) {
@@ -14,7 +16,8 @@ func TestServePIS(t *testing.T) {
 		"type": "url_verification"
   }`
 
-	Routes()
+	eChan := make(chan slackevents.EventsAPIEvent)
+	Routes(eChan)
 
 	r, err := http.NewRequest(http.MethodPost, "/events-endpoint", bytes.NewBufferString(reqStr))
 	if err != nil {
