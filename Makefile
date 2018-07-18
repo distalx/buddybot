@@ -4,7 +4,7 @@ default:
 	CGO_ENABLED=0 go build -a -installsuffix cgo -o buddybot .
 
 build:
-	dep ensure
+	#dep ensure
 	docker build -t billglover/buddybot .
 
 run:

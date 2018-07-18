@@ -1,21 +1,22 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/billglover/buddybot/plusplus"
 	"github.com/nlopes/slack/slackevents"
 )
 
-var token string
-var secret string
+var (
+	token   string
+	secret  string
+	port    string
+	evtChan chan slackevents.EventsAPIEvent
+)
 
-func main() {
-	println("BuddyBot")
-
+func init() {
 	// TODO: There are mixed views on passing in credentials as environment variables.
 	//       We should make a decision on whether this is the approach we want to take.
 	//       We have made a conscious decision not to provide defaults to avoid
@@ -32,59 +33,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	eChan := make(chan slackevents.EventsAPIEvent)
-	go handleEvents(eChan)
-
-	Routes(eChan)
-	http.ListenAndServe(":3000", nil)
-}
-
-// Routes sets up the routes for our web service.
-func Routes(eChan chan slackevents.EventsAPIEvent) {
-	http.HandleFunc("/events-endpoint", func(w http.ResponseWriter, r *http.Request) {
-		buf := new(bytes.Buffer)
-		_, err := buf.ReadFrom(r.Body)
-		if err != nil {
-			log.Println("no request body received")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		body := buf.String()
-
-		event, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionVerifyToken(&NullComparator{}))
-		if err != nil {
-			log.Println("failed to parse event:", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		// process the slack event
-		log.Println("event.Type:", event.Type)
-		switch event.Type {
-		case slackevents.URLVerification:
-			var r *slackevents.ChallengeResponse
-			err := json.Unmarshal([]byte(body), &r)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "text")
-			w.Write([]byte(r.Challenge))
-			return
-
-		case slackevents.CallbackEvent:
-			eChan <- event
-			w.WriteHeader(http.StatusAccepted)
-
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-		}
-	})
-}
-
-func handleEvents(eChan chan slackevents.EventsAPIEvent) {
-	for e := range eChan {
-		log.Println("handling:", e.Type)
+	port = os.Getenv("BUDDYBOT_PORT")
+	if secret == "" {
+		log.Println("port must be provided by setting the BUDDYBOT_PORT EnvVar")
+		os.Exit(1)
 	}
-	log.Println("terminating event handler")
+
+	evtChan = make(chan slackevents.EventsAPIEvent)
+}
+
+func main() {
+	bb := plusplus.Bot{}
+	go bb.Start(evtChan)
+
+	Routes()
+	http.ListenAndServe(":"+port, nil)
 }

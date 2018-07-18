@@ -1,9 +1,9 @@
 FROM golang:1.10.3-alpine as builder
 
 # build directories
-RUN mkdir /go/src/app
-COPY . /go/src/app
-WORKDIR /go/src/app
+RUN mkdir -p /go/src/github.com/billglover/buddybot
+COPY ./ /go/src/github.com/billglover/buddybot/
+WORKDIR /go/src/github.com/billglover/buddybot
 
 # # Go dep!
 # Note: can't use alpine base image as it doesn't include git. This also introduces an online dependency.
@@ -19,5 +19,5 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy application
-COPY --from=builder /go/src/app/buddybot /buddybot
+COPY --from=builder /go/src/github.com/billglover/buddybot /buddybot
 CMD ["/buddybot"]
