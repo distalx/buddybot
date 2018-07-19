@@ -19,5 +19,5 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy application
-COPY --from=builder /go/src/github.com/billglover/buddybot /buddybot
+COPY --from=builder /go/src/github.com/billglover/buddybot/buddybot /buddybot
 CMD ["/buddybot"]

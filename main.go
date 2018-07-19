@@ -4,8 +4,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/billglover/buddybot/plusplus"
+	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 )
 
@@ -34,7 +36,7 @@ func init() {
 	}
 
 	port = os.Getenv("BUDDYBOT_PORT")
-	if secret == "" {
+	if port == "" {
 		log.Println("port must be provided by setting the BUDDYBOT_PORT EnvVar")
 		os.Exit(1)
 	}
@@ -43,8 +45,20 @@ func init() {
 }
 
 func main() {
-	bb := plusplus.Bot{}
+	bb, _ := plusplus.New(token)
 	go bb.Start(evtChan)
+
+	time.AfterFunc(time.Second*10.0, func() {
+		api := slack.New(token)
+		params := slack.PostMessageParameters{
+			Username: "UBLPTK0JH",
+			AsUser:   true,
+		}
+		rc, rt, err := api.PostMessage("CBLPRTX3P", "BuddyBot reporting for duty!", params)
+		log.Println("resp chan:", rc)
+		log.Println("resp ts:", rt)
+		log.Println("resp err:", err)
+	})
 
 	Routes()
 	http.ListenAndServe(":"+port, nil)

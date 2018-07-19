@@ -8,7 +8,7 @@ build:
 	docker build -t billglover/buddybot .
 
 run:
-	docker run --env BUDDYBOT_TOKEN --env BUDDYBOT_SIGNING_SECRET -p=3000:3000 billglover/buddybot
+	docker run --env BUDDYBOT_TOKEN --env BUDDYBOT_SIGNING_SECRET --env BUDDYBOT_PORT -p=3000:3000 billglover/buddybot
 
 clean:
 	go clean
