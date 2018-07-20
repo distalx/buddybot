@@ -1,6 +1,7 @@
 package plusplus
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 
@@ -10,17 +11,19 @@ import (
 
 // Bot represents a single instance of the Bot
 type Bot struct {
-	token string // auth token
-	uid   string // user id
-	tid   string // team id
+	auth_token string // auth token - typically for writing messages
+	user_token string // user token - typically for reading messages
+	uid        string // user id
+	tid        string // team id
 }
 
 // New returns a new instance of PlusPlus
-func New(token string) (*Bot, error) {
+func New(auth_token, user_token string) (*Bot, error) {
 	b := new(Bot)
-	b.token = token
+	b.auth_token = auth_token
+	b.user_token = user_token
 
-	api := slack.New(token)
+	api := slack.New(b.auth_token)
 	atr, err := api.AuthTest()
 	if err != nil {
 		return nil, err
@@ -40,18 +43,57 @@ func New(token string) (*Bot, error) {
 // Start starts an instance  the bot and returns an events channel where it will read
 func (b *Bot) Start(evtChan <-chan slackevents.EventsAPIEvent) {
 	for e := range evtChan {
-		log.Println("handling:", e.Type)
-		log.Printf("%+v", e)
 
 		switch ie := e.InnerEvent.Data.(type) {
 		case *slackevents.MessageEvent:
-			log.Println("message text:", ie.Text)
-			log.Println("message subtype:", ie.SubType)
-			log.Printf("%+v", ie)
+			if ie.SubType != "" {
+				log.Println("skipping scoring because:", ie.SubType)
+				break
+			}
+			err := b.scoreMessage(ie)
+			if err != nil {
+				log.Println("unable to reply to message:", err)
+			}
+
 		default:
 			log.Println("unhandled callback type:", e.InnerEvent.Type)
 		}
 	}
+}
+
+// scoreMessage takes a message and handles s
+func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
+	plusUsers := identifyPlusPlus(msg.Text)
+	for _, u := range plusUsers {
+		api := slack.New(b.auth_token)
+		params := slack.PostMessageParameters{
+			Username:        "UBLPTK0JH",
+			AsUser:          true,
+			ThreadTimestamp: msg.TimeStamp,
+		}
+		reply := fmt.Sprintf("congrats <@%s>! :smile:", u)
+		_, _, err := api.PostMessage(msg.Channel, reply, params)
+		if err != nil {
+			return err
+		}
+	}
+
+	minusUsers := identifyMinusMinus(msg.Text)
+	for _, u := range minusUsers {
+		api := slack.New(b.auth_token)
+		params := slack.PostMessageParameters{
+			Username:        "UBLPTK0JH",
+			AsUser:          true,
+			ThreadTimestamp: msg.TimeStamp,
+		}
+		reply := fmt.Sprintf("Commiserations <@%s>! :sob:", u)
+		_, _, err := api.PostMessage(msg.Channel, reply, params)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // IdentifyPlusPlus takes a message and returns a slice of users tagged for PlusPlus.

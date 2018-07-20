@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	token   string
-	secret  string
-	port    string
-	evtChan chan slackevents.EventsAPIEvent
+	auth_token string
+	user_token string
+	secret     string
+	port       string
+	evtChan    chan slackevents.EventsAPIEvent
 )
 
 func init() {
@@ -23,9 +24,15 @@ func init() {
 	//       We should make a decision on whether this is the approach we want to take.
 	//       We have made a conscious decision not to provide defaults to avoid
 	//       accidental misconfiguration.
-	token = os.Getenv("BUDDYBOT_TOKEN")
-	if token == "" {
+	auth_token = os.Getenv("BUDDYBOT_TOKEN")
+	if auth_token == "" {
 		log.Println("token must be provided by setting the BUDDYBOT_TOKEN EnvVar")
+		os.Exit(1)
+	}
+
+	user_token = os.Getenv("BUDDYBOT_USER_TOKEN")
+	if user_token == "" {
+		log.Println("user token must be provided by setting the BUDDYBOT_USER_TOKEN EnvVar")
 		os.Exit(1)
 	}
 
@@ -45,19 +52,19 @@ func init() {
 }
 
 func main() {
-	bb, _ := plusplus.New(token)
+	bb, _ := plusplus.New(auth_token, user_token)
 	go bb.Start(evtChan)
 
 	time.AfterFunc(time.Second*10.0, func() {
-		api := slack.New(token)
+		api := slack.New(auth_token)
 		params := slack.PostMessageParameters{
 			Username: "UBLPTK0JH",
 			AsUser:   true,
 		}
-		rc, rt, err := api.PostMessage("CBLPRTX3P", "BuddyBot reporting for duty!", params)
-		log.Println("resp chan:", rc)
-		log.Println("resp ts:", rt)
-		log.Println("resp err:", err)
+		_, _, err := api.PostMessage("CBLPRTX3P", "BuddyBot reporting for duty!", params)
+		if err != nil {
+			log.Println("unable to report for duty:", err)
+		}
 	})
 
 	Routes()

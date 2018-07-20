@@ -92,5 +92,5 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 
 // Routes sets up the routes for our web service.
 func Routes() {
-	http.HandleFunc("/events-endpoint", eventHandler)
+	http.HandleFunc("/", eventHandler)
 }
