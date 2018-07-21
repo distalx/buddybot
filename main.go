@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	auth_token string
-	user_token string
-	secret     string
-	port       string
-	evtChan    chan slackevents.EventsAPIEvent
+	authToken string
+	userToken string
+	secret    string
+	port      string
+	evtChan   chan slackevents.EventsAPIEvent
 )
 
 func init() {
@@ -22,14 +22,14 @@ func init() {
 	//       We should make a decision on whether this is the approach we want to take.
 	//       We have made a conscious decision not to provide defaults to avoid
 	//       accidental misconfiguration.
-	auth_token = os.Getenv("BUDDYBOT_TOKEN")
-	if auth_token == "" {
+	authToken = os.Getenv("BUDDYBOT_TOKEN")
+	if authToken == "" {
 		log.Println("token must be provided by setting the BUDDYBOT_TOKEN EnvVar")
 		os.Exit(1)
 	}
 
-	user_token = os.Getenv("BUDDYBOT_USER_TOKEN")
-	if user_token == "" {
+	userToken = os.Getenv("BUDDYBOT_USER_TOKEN")
+	if userToken == "" {
 		log.Println("user token must be provided by setting the BUDDYBOT_USER_TOKEN EnvVar")
 		os.Exit(1)
 	}
@@ -50,7 +50,7 @@ func init() {
 }
 
 func main() {
-	bb, _ := plusplus.New(auth_token, user_token)
+	bb, _ := plusplus.New(authToken, userToken)
 	go bb.Start(evtChan)
 
 	Routes()
