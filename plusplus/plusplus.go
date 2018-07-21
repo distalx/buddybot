@@ -67,7 +67,7 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 	for _, u := range plusUsers {
 		api := slack.New(b.authToken)
 		params := slack.PostMessageParameters{
-			Username:        "UBLPTK0JH",
+			Username:        b.uid,
 			AsUser:          true,
 			ThreadTimestamp: msg.TimeStamp,
 		}
@@ -82,7 +82,7 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 	for _, u := range minusUsers {
 		api := slack.New(b.authToken)
 		params := slack.PostMessageParameters{
-			Username:        "UBLPTK0JH",
+			Username:        b.uid,
 			AsUser:          true,
 			ThreadTimestamp: msg.TimeStamp,
 		}
