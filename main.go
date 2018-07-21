@@ -4,10 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/billglover/buddybot/plusplus"
-	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 )
 
@@ -54,18 +52,6 @@ func init() {
 func main() {
 	bb, _ := plusplus.New(auth_token, user_token)
 	go bb.Start(evtChan)
-
-	time.AfterFunc(time.Second*10.0, func() {
-		api := slack.New(auth_token)
-		params := slack.PostMessageParameters{
-			Username: "UBLPTK0JH",
-			AsUser:   true,
-		}
-		_, _, err := api.PostMessage("CBLPRTX3P", "BuddyBot reporting for duty!", params)
-		if err != nil {
-			log.Println("unable to report for duty:", err)
-		}
-	})
 
 	Routes()
 	http.ListenAndServe(":"+port, nil)
