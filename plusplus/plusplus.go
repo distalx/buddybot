@@ -5,6 +5,7 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/billglover/buddybot/datastore"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 )
@@ -13,6 +14,7 @@ import (
 type Bot struct {
 	authToken string // authToken - typically for writing messages
 	userToken string // userToken - typically for reading messages
+	ds        datastore.Scorer
 	uid       string // user id
 	tid       string // team id
 }
@@ -22,6 +24,11 @@ func New(authToken, userToken string) (*Bot, error) {
 	b := new(Bot)
 	b.authToken = authToken
 	b.userToken = userToken
+	ds, err := datastore.New("score.db")
+	if err != nil {
+		return nil, err
+	}
+	b.ds = ds
 
 	api := slack.New(b.authToken)
 	atr, err := api.AuthTest()
@@ -71,8 +78,13 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 			AsUser:          true,
 			ThreadTimestamp: msg.TimeStamp,
 		}
-		reply := fmt.Sprintf("congrats <@%s>! :smile:", u)
-		_, _, err := api.PostMessage(msg.Channel, reply, params)
+		score, err := b.ds.Inc(b.tid, u)
+		if err != nil {
+			return err
+		}
+
+		reply := fmt.Sprintf("Congrats <@%s>! Score now at %d :smile:", u, score)
+		_, _, err = api.PostMessage(msg.Channel, reply, params)
 		if err != nil {
 			return err
 		}
@@ -86,14 +98,27 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 			AsUser:          true,
 			ThreadTimestamp: msg.TimeStamp,
 		}
-		reply := fmt.Sprintf("Commiserations <@%s>! :sob:", u)
-		_, _, err := api.PostMessage(msg.Channel, reply, params)
+		score, err := b.ds.Dec(b.tid, u)
+		if err != nil {
+			return err
+		}
+
+		reply := fmt.Sprintf("Commiserations <@%s>! Score now at %d :smile:", u, score)
+		_, _, err = api.PostMessage(msg.Channel, reply, params)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// Stop closes the database and stops the bot
+func (b *Bot) Stop() {
+	err := b.ds.Close()
+	if err != nil {
+		log.Println("unable to stop bot:", err)
+	}
 }
 
 // IdentifyPlusPlus takes a message and returns a slice of users tagged for PlusPlus.
