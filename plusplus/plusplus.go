@@ -11,19 +11,19 @@ import (
 
 // Bot represents a single instance of the Bot
 type Bot struct {
-	auth_token string // auth token - typically for writing messages
-	user_token string // user token - typically for reading messages
-	uid        string // user id
-	tid        string // team id
+	authToken string // authToken - typically for writing messages
+	userToken string // userToken - typically for reading messages
+	uid       string // user id
+	tid       string // team id
 }
 
 // New returns a new instance of PlusPlus
-func New(auth_token, user_token string) (*Bot, error) {
+func New(authToken, userToken string) (*Bot, error) {
 	b := new(Bot)
-	b.auth_token = auth_token
-	b.user_token = user_token
+	b.authToken = authToken
+	b.userToken = userToken
 
-	api := slack.New(b.auth_token)
+	api := slack.New(b.authToken)
 	atr, err := api.AuthTest()
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (b *Bot) Start(evtChan <-chan slackevents.EventsAPIEvent) {
 func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 	plusUsers := identifyPlusPlus(msg.Text)
 	for _, u := range plusUsers {
-		api := slack.New(b.auth_token)
+		api := slack.New(b.authToken)
 		params := slack.PostMessageParameters{
 			Username:        "UBLPTK0JH",
 			AsUser:          true,
@@ -80,7 +80,7 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 
 	minusUsers := identifyMinusMinus(msg.Text)
 	for _, u := range minusUsers {
-		api := slack.New(b.auth_token)
+		api := slack.New(b.authToken)
 		params := slack.PostMessageParameters{
 			Username:        "UBLPTK0JH",
 			AsUser:          true,
