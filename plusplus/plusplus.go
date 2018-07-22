@@ -68,7 +68,9 @@ func (b *Bot) Start(evtChan <-chan slackevents.EventsAPIEvent) {
 	}
 }
 
-// scoreMessage takes a message and handles s
+// scoreMessage takes a message and updates user scores if appropriate. If no scores require
+// updating, the function returns silently. Errors are returned if unable to update the score
+// or if we are unable to post an update to the Slack channel.
 func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 	plusUsers := identifyPlusPlus(msg.Text)
 	for _, u := range plusUsers {
@@ -90,26 +92,6 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 		}
 	}
 
-	minusUsers := identifyMinusMinus(msg.Text)
-	for _, u := range minusUsers {
-		api := slack.New(b.authToken)
-		params := slack.PostMessageParameters{
-			Username:        b.uid,
-			AsUser:          true,
-			ThreadTimestamp: msg.TimeStamp,
-		}
-		score, err := b.ds.Dec(b.tid, u)
-		if err != nil {
-			return err
-		}
-
-		reply := fmt.Sprintf("Commiserations <@%s>! Score now at %d :smile:", u, score)
-		_, _, err = api.PostMessage(msg.Channel, reply, params)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -125,16 +107,6 @@ func (b *Bot) Stop() {
 func identifyPlusPlus(msg string) []string {
 	var users []string
 	var re = regexp.MustCompile(`(?m)\<\@(\w+)\>\+\+`)
-	for _, match := range re.FindAllStringSubmatch(msg, -1) {
-		users = append(users, string(match[1]))
-	}
-	return users
-}
-
-// IdentifyMinusMinus takes a message and returns a slice of users tagged for MinusMinus.
-func identifyMinusMinus(msg string) []string {
-	var users []string
-	var re = regexp.MustCompile(`(?m)\<\@(\w+)\>\-\-`)
 	for _, match := range re.FindAllStringSubmatch(msg, -1) {
 		users = append(users, string(match[1]))
 	}
