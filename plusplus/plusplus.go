@@ -80,15 +80,25 @@ func (b *Bot) scoreMessage(msg *slackevents.MessageEvent) error {
 			AsUser:          true,
 			ThreadTimestamp: msg.TimeStamp,
 		}
+
+		if u == msg.User {
+			reply := fmt.Sprintf("No <@%s>, try patting yourself on the back instead.", u)
+			_, _, err := api.PostMessage(msg.Channel, reply, params)
+			if err != nil {
+				log.Println("unable to post message:", err)
+			}
+			break
+		}
+
 		score, err := b.ds.Inc(b.tid, u)
 		if err != nil {
-			return err
+			log.Println("unable to increment score:", err)
 		}
 
 		reply := fmt.Sprintf("Congrats <@%s>! Score now at %d :smile:", u, score)
 		_, _, err = api.PostMessage(msg.Channel, reply, params)
 		if err != nil {
-			return err
+			log.Println("unable to post message:", err)
 		}
 	}
 
