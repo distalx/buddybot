@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: |
+  BuddyBot Slack Bot
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+    Handler: main
+    Runtime: go1.x
+
+Parameters: 
+  CodeBucketParameter: 
+    Type: String
+    Default: me.billglover.buddybot
+    Description: the s3 bucket where code packages are stored for Lambda functions
+  CommandHandlerCodePackage:
+    Type: String
+    Default: cmd.zip
+    Description: the package containing the code for handling Slack commands
+
+Resources:
+
+  # WebHookHandler handles inbound web-hook requests by writing them directly
+  # to a DynamoDB table. It returns success unless unable to write to the DB.
+  CommandHandler:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri:
+        Bucket:
+          Ref: CodeBucketParameter
+        Key:
+          Ref: CommandHandlerCodePackage
+      Policies:
+        # access required to write records to the DB
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: Table
+        # access required to read values in the parameter store
+        - Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+              - 'ssm:DescribeParameters'
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/buddybot-*"
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /command
+            Method: POST
+      Environment:
+        Variables:
+          BUDDYBOT_TABLE:
+            Ref: Table
+          BUDDYBOT_REGION:
+            Ref: 'AWS::Region'
+  
+  # Table is the DynamoDB table where scores are stored.
+  Table:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions: 
+        - AttributeName: uid
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: uid
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+Outputs:
+  WebHook:
+    Description: The web-hook you need to provide to Slack
+    Value:
+      'Fn::Sub': >-
+        https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/command/
+  CommandHandlerFunction:
+    Description: The lambda function that handles Slack Commands
+    Value:
+      Ref: CommandHandler
