@@ -91,15 +91,49 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 		api := slack.New(botToken)
 		api.SetDebug(true)
 
-		_, _, channelID, err := api.OpenIMChannel(action.User.Id)
-		if err != nil {
-			fmt.Println("failed to open IM:", err)
-			resp := events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest}
-			return resp, nil
+		attachment := slack.Attachment{
+			Text:       "Let us know why you've flagged this message.",
+			Color:      "#f9a41b",
+			CallbackID: "flag_reason",
+			Actions: []slack.AttachmentAction{
+				{
+					Name: "select",
+					Type: "select",
+					Options: []slack.AttachmentActionOption{
+						{
+							Text:  "spam",
+							Value: "spam",
+						},
+						{
+							Text:  "negativity",
+							Value: "negativity",
+						},
+						{
+							Text:  "abuse",
+							Value: "abuse",
+						},
+						{
+							Text:  "fast response",
+							Value: "fast response",
+						},
+					},
+				},
+				{
+					Name:  "cancel",
+					Text:  "Cancel",
+					Type:  "button",
+					Style: "danger",
+				},
+			},
 		}
-		_, _, err = api.PostMessage(channelID, "Message successfully flagged!", slack.PostMessageParameters{})
+
+		_, err := api.PostEphemeral(action.Channel.Id, action.User.Id,
+			slack.MsgOptionPostEphemeral2(action.User.Id),
+			slack.MsgOptionAttachments(attachment),
+			slack.MsgOptionText("Message successfully flagged!", false),
+		)
 		if err != nil {
-			fmt.Println("failed to send IM:", err)
+			fmt.Println("failed to notify reporter that message was flagged:", err)
 			resp := events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest}
 			return resp, nil
 		}
