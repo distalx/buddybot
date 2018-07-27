@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,14 +21,15 @@ import (
 )
 
 var (
-	botToken  string
-	usrToken  string
-	reqSecret string
-	dbTable   string
-	dbRegion  string
-	uid       string
-	tid       string
-	db        *dynamodb.DynamoDB
+	botToken   string
+	usrToken   string
+	reqSecret  string
+	dbTable    string
+	dbRegion   string
+	uid        string
+	tid        string
+	adminGroup string
+	db         *dynamodb.DynamoDB
 )
 
 // Handler is called on each inbound request. It receives an APIGatewayProxyRequest and returns
@@ -66,6 +68,21 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 		return resp, nil
 	}
 
+	// get the admin channel if we don't have it already
+	if adminGroup == "" {
+		api := slack.New(usrToken)
+		grps, err := api.GetGroups(true)
+		if err != nil {
+			fmt.Println("ERROR: unable to get bot details:", err)
+			os.Exit(1)
+		}
+		for _, g := range grps {
+			if g.NameNormalized == "admins" {
+				adminGroup = g.ID
+			}
+		}
+	}
+
 	// parse the form to get the payload
 	v, err := url.ParseQuery(req.Body)
 	if err != nil {
@@ -84,12 +101,11 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 	switch action.CallbackId {
 	case "flag":
 		fmt.Println("INFO: message reported")
-		fmt.Println("message:", action.OriginalMessage.Text)
-		fmt.Println("flagged by:", action.User.Id)
-		fmt.Printf("%+v\n", action)
+		fmt.Println("INFO: message:", action.OriginalMessage.Text)
+		fmt.Println("INFO: flagged by:", action.User.Id)
+		fmt.Println("INFO: admin channel:", adminGroup)
 
 		api := slack.New(botToken)
-		api.SetDebug(true)
 
 		attachment := slack.Attachment{
 			Text:       "Let us know why you've flagged this message.",
@@ -138,8 +154,24 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 			return resp, nil
 		}
 
+		// notify the admin channel
+		fmt.Println("INFO: notifying admins:")
+		api = slack.New(botToken)
+		params := slack.PostMessageParameters{
+			Username: uid,
+			AsUser:   true,
+			Markdown: true,
+		}
+		notification := fmt.Sprintf("Message flagged:\n>%s\n", action.OriginalMessage.Text)
+		ts, _, err = api.PostMessage(adminGroup, notification, params)
+		if err != nil {
+			log.Println("ERROR: unable to post message:", err)
+		}
+		fmt.Println("INFO: admins notified:", ts)
+
 	default:
 		fmt.Println("INFO: unhandled action:", action.CallbackId)
+		fmt.Printf("%+v\n", action)
 	}
 
 	resp := events.APIGatewayProxyResponse{StatusCode: http.StatusAccepted}
