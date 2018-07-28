@@ -12,7 +12,7 @@ We use a development Slack workspace to avoid noise in active Slack communities.
 
 Buddybot runs on AWS Lamda. An overview of the set-up is below.
 
-![AWS Lambda Architecture](/docs/BuddyBot.png)
+![AWS Lambda Architecture](docs/BuddyBot.png)
 
 ## Build
 
