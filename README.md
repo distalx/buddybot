@@ -1,26 +1,27 @@
 # buddybot
 
-A Slack bot for Codebuddies
+A buddy friendly Slack bot
 
-We use a development Slack workspace to avoid noise in active Slack communities. If you'd like to contribute, create an issue providing a description of what you'd like to work on and we'll get you an invite.
+* Recognise fellow members with PlusPlus points
+* View the recognition leaderboard
+* Flag messages for admin attention
 
-Slack Workspace: [buddybotdev.slack.com](https://buddybotdev.slack.com/)
+We use a development Slack workspace to avoid noise in active Slack communities. You can find us here: [buddybotdev.slack.com](https://buddybotdev.slack.com/)
 
-## Getting Started
+## Overview
 
-Buddybot runs in a Docker container for ease of deployment. A makefile makes it easy to build (and run) the bot locally. This assumes you have Docker installed.
+Buddybot runs on AWS Lamda. An overview of the set-up is below.
 
-### Build
+![AWS Lambda Architecture](/docs/BuddyBot.png)
 
-```plain
-make build
-```
+## Build
 
-### Run
+We are working on documenting a build process.
 
-You need to provide the Slack API token as the `BUDDYBOT_TOKEN` environment variable. By default we take your local environment variable and expose it inside the Docker container.
+## Test
 
-```plain
-export BUDDYBOT_TOKEN="xoxb-xxxxx-xxxxx-xxxxx"
-make run
-```
+We are working on documenting a local test process.
+
+## Deploy
+
+We are working on documenting a deployment process.
