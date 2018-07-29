@@ -6,7 +6,6 @@ go:
 before_install:
   # Setup dependency management tool
   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-  - chmod +x $GOPATH/bin/dep
 
 install:
   - dep ensure
