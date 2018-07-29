@@ -1,6 +1,9 @@
 language: go
 go:
-  - "1.10.3"
+  - 1.10.x
+  - master
+
+install: true
 
 deploy:
 - provider: script
