@@ -37,7 +37,7 @@ clean:
 	rm -rf ./deploy
 	rm -rf ./tmp
 
-package:
+package: build
 	aws cloudformation package --template-file sam.yaml --s3-bucket $(S3_BUCKET) --output-template-file $(SAM_TEMPLATE)
 
 stage: package
