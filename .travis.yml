@@ -3,7 +3,13 @@ go:
   - 1.10.x
   - master
 
-install: true
+before_install:
+  # Setup dependency management tool
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - chmod +x $GOPATH/bin/dep
+
+install:
+  - dep ensure
 
 deploy:
 - provider: script
