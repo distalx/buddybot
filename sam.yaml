@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: |
+  BuddyBot Slack Bot
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+    Handler: main
+    Runtime: go1.x
+
+Parameters:
+    EnvName:
+        Type: String
+
+Resources:
+
+  # CommandHandler is a serverless function for handling slack commands. It 
+  # requires access to the parameter store (for Slack credentials) and a 
+  # DynamoDB table containing BuddyBot scores.
+  CommandHandler:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub "BuddyBot-Command-${EnvName}"
+      CodeUri: ./deploy/cmd.zip
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: Table
+        - Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+              - 'ssm:DescribeParameters'
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/buddybot-*"
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /command
+            Method: POST
+      Environment:
+        Variables:
+          BUDDYBOT_TABLE:
+            Ref: Table
+          BUDDYBOT_REGION:
+            Ref: 'AWS::Region'
+
+  # EventHandler is a serverless function for handling slack events. It 
+  # requires access to the parameter store (for Slack credentials) and a 
+  # DynamoDB table containing BuddyBot scores.
+  EventHandler:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub "BuddyBot-Event-${EnvName}"
+      CodeUri: ./deploy/event.zip
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: Table
+        - Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+              - 'ssm:DescribeParameters'
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/buddybot-*"
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /event
+            Method: POST
+      Environment:
+        Variables:
+          BUDDYBOT_TABLE:
+            Ref: Table
+          BUDDYBOT_REGION:
+            Ref: 'AWS::Region'
+
+  # ActionHandler is a serverless function for handling slack actions. It 
+  # requires access to the parameter store (for Slack credentials) and a 
+  # DynamoDB table containing BuddyBot scores.
+  ActionHandler:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub "BuddyBot-Action-${EnvName}"
+      CodeUri: ./deploy/action.zip
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: Table
+        - Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+              - 'ssm:DescribeParameters'
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/buddybot-*"
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /action
+            Method: POST
+      Environment:
+        Variables:
+          BUDDYBOT_TABLE:
+            Ref: Table
+          BUDDYBOT_REGION:
+            Ref: 'AWS::Region'
+
+  # Table is the DynamoDB table where scores are stored.
+  Table:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub "BuddyBot-${EnvName}"
+      AttributeDefinitions: 
+        - AttributeName: uid
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: uid
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+Outputs:
+  CommandURL:
+    Description: The web-hook you need to provide to Slack for slash commands
+    Value:
+      'Fn::Sub': >-
+        https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/command
+  EventURL:
+    Description: The web-hook you need to provide to Slack for events
+    Value:
+      'Fn::Sub': >-
+        https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/event
+  ActionURL:
+    Description: The web-hook you need to provide to Slack for actions
+    Value:
+      'Fn::Sub': >-
+        https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/action
