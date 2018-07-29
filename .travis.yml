@@ -2,3 +2,10 @@ language: go
 
 go:
   - "1.10.x"
+
+deploy:
+  skip_cleanup: true
+  - provider: script
+    script: make stage
+    on:
+      branch: master
