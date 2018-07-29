@@ -4,11 +4,14 @@ SAM_TEMPLATE := $(shell pwd)/deploy/sam.yaml
 .PHONY: clean build package deploy
 
 test:
+	dep ensure
 	go test -v ./...
 
 build: clean
 	@mkdir -p ./deploy
 	@mkdir -p ./tmp
+
+	dep ensure
 
 	@echo
 	@echo "Build command handler function:"
