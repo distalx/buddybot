@@ -16,3 +16,6 @@ vendor/
 
 # Local set-up scripts
 env.sh
+
+# Build output
+deploy/
