@@ -17,5 +17,8 @@ vendor/
 # Local set-up scripts
 env.sh
 
+# Visual Studio Code
+.vs/
+
 # Build output
 deploy/
