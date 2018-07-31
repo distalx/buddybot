@@ -25,3 +25,9 @@ We are working on documenting a local test process.
 ## Deploy
 
 We are working on documenting a deployment process.
+
+# Use
+
+The following is for testing purposes only and should not be used on production Slack workspaces.
+
+<a href="https://slack.com/oauth/authorize?scope=commands,bot&client_id=394549252435.394657293682"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a>
