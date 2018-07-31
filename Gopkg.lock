@@ -77,9 +77,12 @@
   revision = "0b12d6b5"
 
 [[projects]]
-  digest = "1:ace662a36243b5cdc2f71e654175dc192f903fafbf3411a95bc910c1cad53ce7"
+  digest = "1:b52d79334c56547a9658cb74ba37732be769d7c9f0f60da6390efe08861211c1"
   name = "github.com/nlopes/slack"
-  packages = ["."]
+  packages = [
+    ".",
+    "slackevents",
+  ]
   pruneopts = "UT"
   revision = "0db1d5eae1116bf7c8ed96c6749acfbf4daaec3e"
   version = "v0.3.0"
@@ -102,6 +105,7 @@
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ssm",
     "github.com/nlopes/slack",
+    "github.com/nlopes/slack/slackevents",
     "github.com/pkg/errors",
   ]
   solver-name = "gps-cdcl"
