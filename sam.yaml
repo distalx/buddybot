@@ -26,7 +26,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName:
-              Ref: Table
+              Ref: AuthTable
         - Statement:
           - Effect: Allow
             Action:
@@ -41,10 +41,14 @@ Resources:
             Method: POST
       Environment:
         Variables:
-          BUDDYBOT_TABLE:
+          BUDDYBOT_SCORE_TABLE:
             Ref: Table
+          BUDDYBOT_AUTH_TABLE:
+            Ref: AuthTable
           BUDDYBOT_REGION:
             Ref: 'AWS::Region'
+      Tags:
+        project: BuddyBot
 
   # EventHandler is a serverless function for handling slack events. It 
   # requires access to the parameter store (for Slack credentials) and a 
@@ -72,10 +76,14 @@ Resources:
             Method: POST
       Environment:
         Variables:
-          BUDDYBOT_TABLE:
+          BUDDYBOT_SCORE_TABLE:
             Ref: Table
+          BUDDYBOT_AUTH_TABLE:
+            Ref: AuthTable
           BUDDYBOT_REGION:
             Ref: 'AWS::Region'
+      Tags:
+        project: BuddyBot
 
   # ActionHandler is a serverless function for handling slack actions. It 
   # requires access to the parameter store (for Slack credentials) and a 
@@ -103,10 +111,49 @@ Resources:
             Method: POST
       Environment:
         Variables:
-          BUDDYBOT_TABLE:
+          BUDDYBOT_SCORE_TABLE:
             Ref: Table
+          BUDDYBOT_AUTH_TABLE:
+            Ref: AuthTable
           BUDDYBOT_REGION:
             Ref: 'AWS::Region'
+      Tags:
+        project: BuddyBot
+  
+  # AuthHandler is a serverless function for handling slack auth events. It 
+  # requires access to the parameter store (for Slack credentials) and a 
+  # DynamoDB table containing access tokens.
+  AuthHandler:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub "BuddyBot-Auth-${EnvName}"
+      CodeUri: ./deploy/auth.zip
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: AuthTable
+        - Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+              - 'ssm:DescribeParameters'
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/buddybot-*"
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /auth
+            Method: GET
+      Environment:
+        Variables:
+          BUDDYBOT_SCORE_TABLE:
+            Ref: Table
+          BUDDYBOT_AUTH_TABLE:
+            Ref: AuthTable
+          BUDDYBOT_REGION:
+            Ref: 'AWS::Region'
+      Tags:
+        project: BuddyBot
 
   # Table is the DynamoDB table where scores are stored.
   Table:
@@ -122,6 +169,30 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+      Tags:
+      - Key: project
+        Value: BuddyBot
+  
+  # AuthTable is the DynamoDB table where scores are stored.
+  AuthTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub "BuddyBot-Auth-${EnvName}"
+      AttributeDefinitions: 
+        - AttributeName: uid
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: uid
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      SSESpecification:
+        SSEEnabled: true
+
+      Tags:
+      - Key: project
+        Value: BuddyBot
 
 Outputs:
   CommandURL:
@@ -139,3 +210,8 @@ Outputs:
     Value:
       'Fn::Sub': >-
         https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/action
+  AuthURL:
+    Description: The web-hook you need to provide to Slack for auth
+    Value:
+      'Fn::Sub': >-
+        https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/auth

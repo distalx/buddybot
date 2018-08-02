@@ -31,6 +31,12 @@ build: clean
 	zip -j deploy/event.zip ./tmp/main
 	rm -f tmp/main
 
+	@echo
+	@echo "Build auth handler function:"
+	GOOS=linux GOARCH=amd64 go build -o tmp/main ./auth
+	zip -j deploy/auth.zip ./tmp/main
+	rm -f tmp/main
+
 	rm -rf ./tmp
 	@echo
 	@echo "Build artifacts:"

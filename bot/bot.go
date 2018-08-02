@@ -24,10 +24,14 @@ type APIHandler func(req events.APIGatewayProxyRequest) (events.APIGatewayProxyR
 
 // SlackBot is an instance of the Slack bot
 type SlackBot struct {
-	BotToken  string
-	UsrToken  string
-	ReqSecret string
-	Region    string
+	ClientID     string
+	ClientSecret string
+	BotToken     string
+	UsrToken     string
+	ReqSecret    string
+	Region       string
+	AuthTable    string
+	ScoreTable   string
 }
 
 // New returns an instance of a SlackBot. It retrieves credentials from the AWS Parameter Store
@@ -44,6 +48,8 @@ func New() (*SlackBot, error) {
 			aws.String("buddybot-botToken"),
 			aws.String("buddybot-usrToken"),
 			aws.String("buddybot-reqSecret"),
+			aws.String("buddybot-clientID"),
+			aws.String("buddybot-clientSecret"),
 		},
 		WithDecryption: &decrypt,
 	}
@@ -55,6 +61,16 @@ func New() (*SlackBot, error) {
 	params := make(map[string]string, len(paramsOut.Parameters))
 	for _, p := range paramsOut.Parameters {
 		params[*p.Name] = *p.Value
+	}
+
+	b.ClientID = params["buddybot-clientID"]
+	if b.ClientID == "" {
+		return nil, errors.New("required parameter 'buddybot-clientID' is undefined")
+	}
+
+	b.ClientSecret = params["buddybot-clientSecret"]
+	if b.ClientSecret == "" {
+		return nil, errors.New("required parameter 'buddybot-clientSecret' is undefined")
 	}
 
 	b.BotToken = params["buddybot-botToken"]
@@ -74,7 +90,17 @@ func New() (*SlackBot, error) {
 
 	b.Region = os.Getenv("BUDDYBOT_REGION")
 	if b.Region == "" {
-		return nil, errors.New("required environmentle  'BUDDYBOT_REGION' is undefined")
+		return nil, errors.New("required environment variable  'BUDDYBOT_REGION' is undefined")
+	}
+
+	b.AuthTable = os.Getenv("BUDDYBOT_AUTH_TABLE")
+	if b.AuthTable == "" {
+		return nil, errors.New("required environment variable  'BUDDYBOT_AUTH_TABLE' is undefined")
+	}
+
+	b.ScoreTable = os.Getenv("BUDDYBOT_SCORE_TABLE")
+	if b.ScoreTable == "" {
+		return nil, errors.New("required environment variable  'BUDDYBOT_SCORE_TABLE' is undefined")
 	}
 
 	return b, nil

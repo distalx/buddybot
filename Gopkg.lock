@@ -15,7 +15,7 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:7e708f24890cbcf1b435b57cb0238e8ff3345c2e3606b2902e99a9a9843c1b0a"
+  digest = "1:10484cde59145b4f2a08767817f280d78af07ce891bc6bf1c86e56393e88d730"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -46,6 +46,8 @@
     "private/protocol/query/queryutil",
     "private/protocol/rest",
     "private/protocol/xml/xmlutil",
+    "service/dynamodb",
+    "service/dynamodb/dynamodbattribute",
     "service/ssm",
     "service/sts",
   ]
@@ -103,6 +105,8 @@
     "github.com/aws/aws-lambda-go/lambda",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/dynamodb",
+    "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute",
     "github.com/aws/aws-sdk-go/service/ssm",
     "github.com/nlopes/slack",
     "github.com/nlopes/slack/slackevents",
