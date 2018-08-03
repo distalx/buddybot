@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
+
 	"net/http"
 	"net/url"
 	"os"
@@ -128,7 +131,23 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 	}
 
 	fmt.Println("INFO: successfully put record in DynamoDB:")
-	apiResp := events.APIGatewayProxyResponse{StatusCode: http.StatusAccepted}
+
+	pageBuf := new(bytes.Buffer)
+	t := template.Must(template.New("t1").
+		Parse("<html><body><h1>BuddyBot</h1><p>Successfully authenticated for: {{.}}</p></body></html>"))
+	err = t.Execute(pageBuf, record.TeamName)
+	if err != nil {
+		fmt.Println("ERROR: unable to render template:", err)
+		apiResp := events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}
+		return apiResp, nil
+	}
+
+	apiResp := events.APIGatewayProxyResponse{
+		Body:       pageBuf.String(),
+		StatusCode: http.StatusOK,
+		Headers:    map[string]string{"Content-Type": "text/html; charset=utf-8"},
+	}
+
 	return apiResp, nil
 }
 
