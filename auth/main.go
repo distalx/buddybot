@@ -144,8 +144,8 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 
 	apiResp := events.APIGatewayProxyResponse{
 		Body:       pageBuf.String(),
-		StatusCode: http.StatusOK,
-		Headers:    map[string]string{"Content-Type": "text/html; charset=utf-8"},
+		StatusCode: http.StatusSeeOther,
+		Headers:    map[string]string{"Location": "http://me.billglover.buddybot.static.s3-website-eu-west-1.amazonaws.com/success.html"},
 	}
 
 	return apiResp, nil

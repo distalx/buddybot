@@ -52,6 +52,8 @@ package: build
 stage: package
 	aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file $(SAM_TEMPLATE) --stack-name "BuddyBot-DEV" --parameter-overrides EnvName=DEV
 	aws cloudformation describe-stacks --stack-name BuddyBot-DEV --query 'Stacks[0].Outputs[*].{Fn:OutputKey,URL:OutputValue}' --output=text
+	aws s3 sync ./static/ s3://me.billglover.buddybot.static/ --delete --acl public-read
+
 
 prod: package
 	aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file $(SAM_TEMPLATE) --stack-name "BuddyBot-PRD" --parameter-overrides EnvName=PRD

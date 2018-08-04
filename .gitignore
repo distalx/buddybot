@@ -19,6 +19,7 @@ env.sh
 
 # Visual Studio Code
 .vs/
+.vscode/
 
 # Build output
 deploy/

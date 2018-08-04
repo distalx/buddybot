@@ -1,16 +1,16 @@
-# buddybot
+# BuddyBot
 
 A buddy friendly Slack bot
 
 * Recognise fellow members with PlusPlus points
-* View the recognition leaderboard
-* Flag messages for admin attention
+* View the recognition leader board
+* Flag messages for administrator attention
 
 We use a development Slack workspace to avoid noise in active Slack communities. You can find us here: [buddybotdev.slack.com](https://buddybotdev.slack.com/)
 
 ## Overview
 
-Buddybot runs on AWS Lamda. An overview of the set-up is below.
+BuddyBot runs on AWS Lambda. An overview of the set-up is below.
 
 ![AWS Lambda Architecture](docs/BuddyBot.png)
 
@@ -26,7 +26,7 @@ We are working on documenting a local test process.
 
 We are working on documenting a deployment process.
 
-# Use
+## Use
 
 The following is for testing purposes only and should not be used on production Slack workspaces.
 
