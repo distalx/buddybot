@@ -60,10 +60,19 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 		// The CallbackEvent type contains inner events which we need to differentiate
 		// before we can do anything useful.
 		case slackevents.CallbackEvent:
+			cbe := e.Data.(*slackevents.EventsAPICallbackEvent)
 			switch ev := e.InnerEvent.Data.(type) {
 			case *slackevents.AppMentionEvent:
 
-				api := slack.New(b.BotToken)
+				// retrieve the appropriate bot token
+				token, err := b.RetrieveToken(cbe.TeamID)
+				if err != nil {
+					fmt.Println("WARN: unable to retrieve access token:", err)
+					resp := events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}
+					return resp, nil
+				}
+
+				api := slack.New(token)
 
 				plusUsers := identifyPlusPlus(ev.Text)
 
@@ -71,7 +80,7 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 					params := slack.PostMessageParameters{}
 
 					if u == ev.User {
-						reply := fmt.Sprintf("No <@%s>, try patting yourself on the back instead.", u)
+						reply := fmt.Sprintf("No <@%s>, try patting yourself on the back instead :stuck_out_tongue_closed_eyes:", u)
 						_, _, err := api.PostMessage(ev.Channel, reply, params)
 						if err != nil {
 							fmt.Println("WARN: unable to post message:", err)
@@ -79,7 +88,7 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 						break
 					}
 
-					reply := fmt.Sprintf("Congrats <@%s>! Score now at %d :smile:", u, 0)
+					reply := fmt.Sprintf("Congrats <@%s>! Score now at {lastScore++} :smile:", u)
 					_, _, err = api.PostMessage(ev.Channel, reply, params)
 					if err != nil {
 						fmt.Println("WARN: unable to post message:", err)

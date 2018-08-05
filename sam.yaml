@@ -62,6 +62,9 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:
               Ref: Table
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: AuthTable
         - Statement:
           - Effect: Allow
             Action:

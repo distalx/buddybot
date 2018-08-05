@@ -13,6 +13,8 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
@@ -183,6 +185,36 @@ func (b *SlackBot) validateRequest(req events.APIGatewayProxyRequest) error {
 	return nil
 }
 
+// RetrieveToken queries the AuthTable to identify the auth token for a given
+// Slack team. It returns an error if it is unable to find the token.
+func (b *SlackBot) RetrieveToken(teamID string) (string, error) {
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(b.Region)})
+	if err != nil {
+		return "", err
+	}
+
+	ddb := dynamodb.New(sess)
+
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(b.AuthTable),
+		Key:       map[string]*dynamodb.AttributeValue{"uid": {S: aws.String(teamID)}},
+	}
+
+	result, err := ddb.GetItem(input)
+	if err != nil {
+		return "", err
+	}
+
+	item := AuthRecord{}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
+	if err != nil {
+		return "", err
+	}
+
+	return item.BotAccessToken, nil
+}
+
 // CheckHMAC reports whether msgHMAC is a valid HMAC tag for msg.
 func checkHMAC(body, timestamp, msgHMAC, key string) bool {
 	msg := "v0:" + timestamp + ":" + body
@@ -203,4 +235,18 @@ type NullComparator struct{}
 // the validity of the request signature.
 func (c NullComparator) Verify(string) bool {
 	return true
+}
+
+// AuthRecord represents the access token we store in DynamoDB for
+// every authenticated workspace.
+// TODO: consider whether this should go in a separate records package
+type AuthRecord struct {
+	UID            string `json:"uid"`
+	AccessToken    string `json:"access_token"`
+	Scope          string `json:"scope"`
+	UserID         string `json:"user_id"`
+	TeamName       string `json:"team_name"`
+	TeamID         string `json:"team_id"`
+	BotUserID      string `json:"bot_user_id"`
+	BotAccessToken string `json:"bot_access_token"`
 }
