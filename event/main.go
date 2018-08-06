@@ -7,8 +7,13 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/billglover/buddybot/bot"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
@@ -88,7 +93,42 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 						break
 					}
 
-					reply := fmt.Sprintf("Congrats <@%s>! Score now at {lastScore++} :smile:", u)
+					// TODO: update score in database
+
+					sess, err := session.NewSession(&aws.Config{Region: aws.String(b.Region)})
+					if err != nil {
+						fmt.Println("ERROR: unable to create session:", err)
+						break
+					}
+
+					ddb := dynamodb.New(sess)
+
+					input := &dynamodb.UpdateItemInput{
+						ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{":s": {N: aws.String("1")}},
+						TableName:                 aws.String(b.ScoreTable),
+						Key:                       map[string]*dynamodb.AttributeValue{"uid": {S: aws.String(cbe.TeamID + ":" + u)}},
+						ReturnValues:              aws.String("UPDATED_NEW"),
+						UpdateExpression:          aws.String("add score :s"),
+					}
+
+					v, err := ddb.UpdateItem(input)
+					if err != nil {
+						fmt.Println("ERROR: unable to update database:", err)
+						break
+					}
+
+					fmt.Printf("INFO: %+v\n", v)
+					fmt.Printf("INFO: %+v\n", v.Attributes["score"])
+
+					record := new(int)
+					err = dynamodbattribute.Unmarshal(v.Attributes["score"], record)
+
+					if err != nil {
+						fmt.Println("ERROR: unable to unmarshal return value:", err)
+						break
+					}
+
+					reply := fmt.Sprintf("Congrats <@%s>! Score now at %d :smile:", u, *record)
 					_, _, err = api.PostMessage(ev.Channel, reply, params)
 					if err != nil {
 						fmt.Println("WARN: unable to post message:", err)
