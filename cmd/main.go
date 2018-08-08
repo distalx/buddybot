@@ -42,7 +42,7 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 			fmt.Println("INFO: sent by:", s.TeamID, s.UserID, "(", s.UserName, ")")
 
 			// retrieve the appropriate bot token
-			token, err := b.RetrieveToken(s.TeamID)
+			token, _, _, err := b.RetrieveTokens(s.TeamID)
 			if err != nil {
 				fmt.Println("WARN: unable to retrieve access token:", err)
 				resp := events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}

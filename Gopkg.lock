@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:6c8d51660e50d38116fe8c29eefc00ce856300329993980f7ce7333a522a6a99"
+  digest = "1:f0c0a49ebbd24f487b069e1b5e42e4c48f848734b2a7af73bae08418859106b9"
   name = "github.com/aws/aws-lambda-go"
   packages = [
     "events",
@@ -11,11 +11,11 @@
     "lambdacontext",
   ]
   pruneopts = "UT"
-  revision = "4d30d0ff60440c2d0480a15747c96ee71c3c53d4"
-  version = "v1.2.0"
+  revision = "e630af386f8aad6ec9fc899b951cf62d37cfe56f"
+  version = "v1.4.0"
 
 [[projects]]
-  digest = "1:10484cde59145b4f2a08767817f280d78af07ce891bc6bf1c86e56393e88d730"
+  digest = "1:81f65af117fc550a9deed38a7d3809c81001c28f9446db2fa0a72351a26911c3"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -52,8 +52,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "8475c414b1bd58b8cc214873a8854e3a621e67d7"
-  version = "v1.15.0"
+  revision = "f9728bfcd31e85d264b4ab20299bbbba241c00ca"
+  version = "v1.15.7"
 
 [[projects]]
   digest = "1:fe8a03a8222d5b913f256972933d26d24ad7c8286692a42943bc01633cc8fce3"
@@ -79,15 +79,16 @@
   revision = "0b12d6b5"
 
 [[projects]]
-  digest = "1:b52d79334c56547a9658cb74ba37732be769d7c9f0f60da6390efe08861211c1"
+  branch = "master"
+  digest = "1:996815e8b3d470ef9b6419ea5a8671bc6587ee7554ff8b44e716ffc3e1c8d70c"
   name = "github.com/nlopes/slack"
   packages = [
     ".",
     "slackevents",
   ]
   pruneopts = "UT"
-  revision = "0db1d5eae1116bf7c8ed96c6749acfbf4daaec3e"
-  version = "v0.3.0"
+  revision = "f6fd8fe23f2660022998f8fddaf93ef896e61365"
+  source = "github.com/billglover/slack"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"

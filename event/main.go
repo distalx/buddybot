@@ -65,7 +65,7 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 			switch ev := e.InnerEvent.Data.(type) {
 
 			case *slackevents.AppMentionEvent:
-				token, err := b.RetrieveToken(cbe.TeamID)
+				token, _, _, err := b.RetrieveTokens(cbe.TeamID)
 				if err != nil {
 					fmt.Println("WARN: unable to retrieve team access token:", err)
 					resp := events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}

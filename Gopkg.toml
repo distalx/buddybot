@@ -16,4 +16,5 @@
 
 [[constraint]]
   name = "github.com/nlopes/slack"
-  version = "0.3.0"
+  branch = "master"
+  source = "github.com/billglover/slack"

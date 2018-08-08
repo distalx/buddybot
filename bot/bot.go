@@ -142,19 +142,42 @@ func (b *SlackBot) ParseSlashCommand(req events.APIGatewayProxyRequest) (slack.S
 // ParseEvent takes an AWS API Gateway Request and returns a Slack EventsAPIEvent. It returns an error
 // if the request is invalid or it is unable to parse the request.
 func (b *SlackBot) ParseEvent(req events.APIGatewayProxyRequest) (slackevents.EventsAPIEvent, error) {
-	e := slackevents.EventsAPIEvent{}
+	event := slackevents.EventsAPIEvent{}
 
 	err := b.validateRequest(req)
 	if err != nil {
-		return e, err
+		return event, err
 	}
 
-	e, err = slackevents.ParseEvent(json.RawMessage(req.Body), slackevents.OptionVerifyToken(&NullComparator{}))
+	event, err = slackevents.ParseEvent(json.RawMessage(req.Body), slackevents.OptionVerifyToken(&NullComparator{}))
 	if err != nil {
-		return e, err
+		return event, err
 	}
 
-	return e, nil
+	return event, nil
+}
+
+// ParseAction takes an AWS API Gateway Request and returns a Slack MessageAction. It returns an error
+// if the request is invalid or it is unable to parse the request.
+func (b *SlackBot) ParseAction(req events.APIGatewayProxyRequest) (slackevents.MessageAction, error) {
+	action := slackevents.MessageAction{}
+
+	err := b.validateRequest(req)
+	if err != nil {
+		return action, err
+	}
+
+	form, err := url.ParseQuery(req.Body)
+	if err != nil {
+		return action, errors.Wrap(err, "failed to parse request body")
+	}
+
+	action, err = slackevents.ParseActionEvent(form.Get("payload"), slackevents.OptionVerifyToken(&NullComparator{}))
+	if err != nil {
+		return action, err
+	}
+
+	return action, nil
 }
 
 // ValidateRequest returns an error if the request doesn't pass validation. Validation is
@@ -185,12 +208,13 @@ func (b *SlackBot) validateRequest(req events.APIGatewayProxyRequest) error {
 	return nil
 }
 
-// RetrieveToken queries the AuthTable to identify the auth token for a given
-// Slack team. It returns an error if it is unable to find the token.
-func (b *SlackBot) RetrieveToken(teamID string) (string, error) {
+// RetrieveTokens queries the AuthTable to identify the auth tokens for a given
+// Slack team. It returns the bot token and the bot user token and the userID or
+// an error if it is unable to find the token.
+func (b *SlackBot) RetrieveTokens(teamID string) (string, string, string, error) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(b.Region)})
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
 	ddb := dynamodb.New(sess)
@@ -202,17 +226,17 @@ func (b *SlackBot) RetrieveToken(teamID string) (string, error) {
 
 	result, err := ddb.GetItem(input)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
 	item := AuthRecord{}
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
-	return item.BotAccessToken, nil
+	return item.BotAccessToken, item.AccessToken, item.UserID, nil
 }
 
 // CheckHMAC reports whether msgHMAC is a valid HMAC tag for msg.
