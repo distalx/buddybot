@@ -80,14 +80,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:996815e8b3d470ef9b6419ea5a8671bc6587ee7554ff8b44e716ffc3e1c8d70c"
+  digest = "1:144183588c36cbb3edc7e9716f46743c8c308d7d60cf0480f699d5a72dcf9e8b"
   name = "github.com/nlopes/slack"
   packages = [
     ".",
     "slackevents",
   ]
   pruneopts = "UT"
-  revision = "f6fd8fe23f2660022998f8fddaf93ef896e61365"
+  revision = "d10b0e15d99a54398748afc3af227c26007c7410"
   source = "github.com/billglover/slack"
 
 [[projects]]

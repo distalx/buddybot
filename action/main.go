@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -36,7 +35,7 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 		switch a.CallbackId {
 		case "flag":
 
-			// get the access tokens
+			// Request access tokens
 			botToken, botUserToken, botUser, err := b.RetrieveTokens(a.Team.Id)
 			if err != nil {
 				fmt.Println("WARN: unable to retrieve team access token:", err)
@@ -44,7 +43,7 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 				return resp, nil
 			}
 
-			// get the admin channel
+			// Searching for the admin channel requires the Bot User token rather than the Bot token.
 			adminGroup := ""
 			api := slack.New(botUserToken)
 			grps, err := api.GetGroups(true)
@@ -59,73 +58,81 @@ func handler(b *bot.SlackBot) bot.APIHandler {
 				}
 			}
 
-			fmt.Println("INFO: message reported")
-			fmt.Println("INFO: message:", a.OriginalMessage.Text)
-			fmt.Println("INFO: flagged by:", a.User.Id)
-			fmt.Println("INFO: admin channel:", adminGroup)
-
+			// Notify the reporter that we have received their report
 			api = slack.New(botToken)
-
-			attachment := slack.Attachment{
-				Text:       "Let us know why you've flagged this message.",
-				Color:      "#f9a41b",
-				CallbackID: "flag_reason",
-				Actions: []slack.AttachmentAction{
-					{
-						Name: "select",
-						Type: "select",
-						Options: []slack.AttachmentActionOption{
-							{
-								Text:  "spam",
-								Value: "spam",
-							},
-							{
-								Text:  "negativity",
-								Value: "negativity",
-							},
-							{
-								Text:  "abuse",
-								Value: "abuse",
-							},
-							{
-								Text:  "fast response",
-								Value: "fast response",
-							},
-						},
-					},
-					{
-						Name:  "cancel",
-						Text:  "Cancel",
-						Type:  "button",
-						Style: "danger",
-					},
-				},
-			}
-
 			_, err = api.PostEphemeral(a.Channel.Id, a.User.Id,
 				slack.MsgOptionPostEphemeral2(a.User.Id),
-				slack.MsgOptionAttachments(attachment),
-				slack.MsgOptionText("Message successfully flagged!", false),
+				slack.MsgOptionText("This message has been flagged!\nWe'll review it against our Code of Conduct and take appropriate action. If we need more information, one of the admins will be in touch privately for more information.", false),
 			)
 			if err != nil {
-				fmt.Println("failed to notify reporter that message was flagged:", err)
+				fmt.Println("WARN: failed to notify reporter that message was flagged:", err)
 				resp := events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest}
 				return resp, nil
 			}
 
-			// notify the admin channel
+			// Notify the original author that their message has been flagged
 			api = slack.New(botToken)
-			params := slack.PostMessageParameters{
-				Username: botUser,
-				AsUser:   true,
-				Markdown: true,
-			}
-			notification := fmt.Sprintf("Message flagged:\n>%s\n", a.OriginalMessage.Text)
-			ts, _, err := api.PostMessage(adminGroup, notification, params)
+			msgText := "This message that you posted has been flagged as potentially violating our Code of Conduct!\n> \"" + a.OriginalMessage.Text + "\"\n\nThe message may be removed or one of the admins may be in touch shortly to discuss this post. We know that not all CoC breaches are intentional, so please consider reviewing your post and notifying the thread of any changes."
+			_, err = api.PostEphemeral(a.Channel.Id, a.OriginalMessage.User,
+				slack.MsgOptionPostEphemeral2(a.User.Id),
+				slack.MsgOptionText(msgText, false),
+			)
 			if err != nil {
-				log.Println("ERROR: unable to post message:", err)
+				fmt.Println("WARN: failed to notify reporter that message was flagged:", err)
+				resp := events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest}
+				return resp, nil
 			}
-			fmt.Println("INFO: admins notified:", ts)
+
+			// Request a permalink to the flagged message
+			linkParams := slack.GetPermalinkParameters{
+				Channel: a.Channel.Id,
+				Ts:      a.OriginalMessage.Timestamp,
+			}
+			permalink, err := api.GetPermalink(&linkParams)
+			if err != nil {
+				fmt.Println("ERROR: unable to get message permalink:", err)
+			}
+
+			// Get user and channel names to allow us to post a useful message in the admin channel
+			reporter, err := api.GetUserInfo(a.User.Id)
+			if err != nil {
+				fmt.Println("ERROR: unable to get the reporter name:", err)
+			}
+
+			author, err := api.GetUserInfo(a.OriginalMessage.User)
+			if err != nil {
+				fmt.Println("ERROR: unable to get the author name:", err)
+			}
+
+			channel, err := api.GetChannelInfo(a.Channel.Id)
+			if err != nil {
+				fmt.Println("ERROR: unable to get the channel name:", err)
+			}
+
+			attachment := slack.Attachment{
+				Title:     "Flagged message",
+				TitleLink: permalink,
+				Color:     "danger",
+				Pretext:   "The message below has been flagged for a potential CoC violation",
+				Fields: []slack.AttachmentField{
+					slack.AttachmentField{Title: "Reporter", Value: reporter.Name, Short: true},
+					slack.AttachmentField{Title: "Author", Value: author.Name, Short: true},
+					slack.AttachmentField{Title: "Channel", Value: channel.Name, Short: true},
+					slack.AttachmentField{Title: "Message", Value: a.OriginalMessage.Text, Short: false},
+				},
+			}
+			msgParams := slack.PostMessageParameters{
+				Username:    botUser,
+				AsUser:      true,
+				Markdown:    true,
+				Attachments: []slack.Attachment{attachment},
+			}
+
+			_, _, err = api.PostMessage(adminGroup, "", msgParams)
+			if err != nil {
+				fmt.Println("ERROR: unable to post message:", err)
+			}
+			fmt.Println("INFO: message by", author.Name, "flagged by", reporter.Name)
 
 		default:
 			fmt.Println("INFO: unhandled action:", a.CallbackId)
